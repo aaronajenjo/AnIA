@@ -2,13 +2,13 @@ import {
   BookOpen,
   ClipboardList,
   Compass,
-  Leaf,
   MessageCircle,
   MessageSquareHeart,
   Palette,
   Shield,
   Wind,
 } from 'lucide-react';
+import aniaLogo from '../assets/images/logo.png';
 import type { AppView } from '../shared/types';
 
 interface SidebarProps {
@@ -48,9 +48,11 @@ export function Sidebar({
       <div>
         {/* Brand Header */}
         <div className="flex items-center gap-3 px-2 mb-7">
-          <div className="w-9 h-9 rounded-full bg-ania-accent-soft flex items-center justify-center text-ania-accent-text shrink-0">
-            <Leaf className="w-4 h-4" aria-hidden="true" />
-          </div>
+          <img
+            src={aniaLogo}
+            alt="Logo de AnIA"
+            className="w-10 h-10 object-contain shrink-0"
+          />
           <span className="font-display text-2xl font-semibold tracking-tight text-ania-heading">
             AnIA
           </span>

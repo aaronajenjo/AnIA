@@ -3,7 +3,6 @@ import {
   BookmarkCheck,
   Check,
   Edit3,
-  Leaf,
   Mic,
   MicOff,
   Paperclip,
@@ -14,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import aniaLogo from '../assets/images/logo.png';
 import { postAniaJson } from '../shared/api';
 import { detectRiskIndicators } from '../shared/safety';
 import type {
@@ -362,9 +362,11 @@ export function ConversarView({
           return (
             <div key={msg.id} className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-ania-accent-soft text-ania-accent-text flex items-center justify-center shrink-0 mt-0.5">
-                  <Leaf className="w-4 h-4" aria-hidden="true" />
-                </div>
+                <img
+                  src={aniaLogo}
+                  alt="AnIA"
+                  className="w-8 h-8 object-contain shrink-0 mt-0.5"
+                />
 
                 <div className="flex-1 space-y-3 max-w-[90%] sm:max-w-[82%]">
                   <div className="bg-ania-accent-tint text-ania-ink rounded-2xl rounded-tl-sm px-5 py-4 text-sm leading-relaxed whitespace-pre-wrap">
@@ -768,9 +770,11 @@ export function ConversarView({
 
         {loading && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-ania-accent-soft text-ania-accent-text flex items-center justify-center shrink-0">
-              <Leaf className="w-4 h-4" aria-hidden="true" />
-            </div>
+            <img
+              src={aniaLogo}
+              alt="AnIA"
+              className="w-8 h-8 object-contain shrink-0"
+            />
             <div className="bg-ania-accent-tint rounded-2xl px-5 py-3 text-xs text-ania-ink-muted">
               AnIA está leyendo con calma…
             </div>

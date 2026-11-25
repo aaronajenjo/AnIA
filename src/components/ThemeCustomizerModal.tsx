@@ -1,4 +1,5 @@
-import { Check, Leaf, Moon, Palette, RotateCcw, Sun, Type, X } from 'lucide-react';
+import { Check, Moon, Palette, RotateCcw, Sun, Type, X } from 'lucide-react';
+import aniaLogo from '../assets/images/logo.png';
 import {
   ACCENT_SWATCHES,
   DARK_BUBBLE_SWATCHES,
@@ -212,15 +213,12 @@ export function ThemeCustomizerModal({
               >
                 <div className="flex items-center justify-between gap-2 pb-2.5 border-b" style={{ borderColor: previewTokens.borderSubtle }}>
                   <div className="flex items-center gap-2">
-                    <span
-                      className="w-7 h-7 rounded-full flex items-center justify-center"
-                      style={{
-                        backgroundColor: previewTokens.accentSoft,
-                        color: previewTokens.accentText,
-                      }}
-                    >
-                      <Leaf className="w-3.5 h-3.5" aria-hidden="true" />
-                    </span>
+                    <img
+                      src={aniaLogo}
+                      alt=""
+                      aria-hidden="true"
+                      className="w-7 h-7 object-contain shrink-0"
+                    />
                     <span
                       className="text-sm font-semibold"
                       style={{

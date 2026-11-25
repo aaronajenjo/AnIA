@@ -1,5 +1,6 @@
-import { Leaf, Menu, Palette, SlidersHorizontal, X } from 'lucide-react';
+import { Menu, Palette, SlidersHorizontal, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import aniaLogo from './assets/images/logo.png';
 import { AvatarCustomizerModal } from './components/AvatarCustomizerModal';
 import { AvatarView } from './components/AvatarView';
 import { CalmToolsView } from './components/CalmToolsView';
@@ -89,9 +90,11 @@ export default function App() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="w-7 h-7 rounded-full bg-ania-accent-soft text-ania-accent-text flex items-center justify-center">
-            <Leaf className="w-3.5 h-3.5" aria-hidden="true" />
-          </div>
+          <img
+            src={aniaLogo}
+            alt="Logo de AnIA"
+            className="w-8 h-8 object-contain shrink-0"
+          />
           <span className="font-display text-lg font-semibold text-ania-heading">AnIA</span>
         </div>
         <div className="flex items-center gap-2">
@@ -188,7 +191,12 @@ export default function App() {
           {/* Card Header Bar */}
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-ania-border-subtle flex flex-wrap items-center justify-between gap-2.5 shrink-0">
             <div className="flex items-center gap-2.5">
-              <Leaf className="w-4 h-4 text-ania-accent-text" aria-hidden="true" />
+              <img
+                src={aniaLogo}
+                alt=""
+                aria-hidden="true"
+                className="w-6 h-6 object-contain shrink-0"
+              />
               <h1 className="font-display text-sm sm:text-base font-semibold text-ania-heading">
                 {cu4Active ? 'Seguridad y conexión con ayuda humana' : VIEW_TITLES[activeView]}
               </h1>
