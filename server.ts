@@ -1027,8 +1027,8 @@ app.use(
 );
 
 async function startServer() {
-  const PORT = 3000;
   const isProd = process.env.NODE_ENV === 'production';
+  const PORT = isProd ? Number(process.env.PORT) || 3000 : 3000;
 
   if (!isProd) {
     const { createServer: createViteServer } = await import('vite');
