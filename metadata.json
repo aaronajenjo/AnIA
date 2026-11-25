@@ -1,0 +1,6 @@
+{
+  "name": "AnIA",
+  "description": "Acompañamiento emocional que ayuda a expresar, organizar, observar, comunicar y conectar con ayuda humana, sin sustituir al profesional.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
