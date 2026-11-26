@@ -1,10 +1,11 @@
 import { Menu, Palette, SlidersHorizontal, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import aniaLogo from './assets/images/logo.png';
 import { AvatarCustomizerModal } from './components/AvatarCustomizerModal';
 import { AvatarView } from './components/AvatarView';
 import { CalmToolsView } from './components/CalmToolsView';
 import { ConversarView } from './components/ConversarView';
+import { DEMO_STEPS, DemoTutorialOverlay } from './components/DemoTutorialOverlay';
 import { DiaryView } from './components/DiaryView';
 import { HomeModeSelector } from './components/HomeModeSelector';
 import { MessageHelperView } from './components/MessageHelperView';
@@ -15,8 +16,62 @@ import { Sidebar } from './components/Sidebar';
 import { SupportNetworkView } from './components/SupportNetworkView';
 import { ThemeCustomizerModal } from './components/ThemeCustomizerModal';
 import { TherapyNotesView } from './components/TherapyNotesView';
-import type { AppView, HomeConversationMode } from './shared/types';
+import {
+  DEMO_AUTHORIZED_NOTES,
+  DEMO_CHAT_TURN_1_ANIA,
+  DEMO_CHAT_TURN_1_USER,
+  DEMO_CHAT_TURN_2_ANIA,
+  DEMO_CHAT_TURN_2_USER,
+  DEMO_CONSULTA_ITEMS,
+  DEMO_DIARY_ENTRIES,
+  DEMO_MESSAGE_PREVIEW,
+  DEMO_SAVED_DRAFTS,
+  DEMO_SUPPORT_NEEDS,
+  DEMO_SUPPORT_PEOPLE,
+  DEMO_TREND_OBSERVATION,
+  DEMO_WELCOME_MESSAGE,
+  type DemoMessagePreview,
+} from './shared/demoData';
+import type {
+  AppView,
+  ChatMessage,
+  ConsultaSummaryState,
+  DescriptiveTrendObservation,
+  DiaryEntry,
+  HomeConversationMode,
+  SavedMessageDraft,
+  SupportNeedType,
+  SupportPerson,
+} from './shared/types';
 import { useAniaStore } from './store/useAniaStore';
+
+interface DemoSandboxData {
+  messages: ChatMessage[];
+  authorizedConversationNotes: string[];
+  diaryEntries: DiaryEntry[];
+  trendObservation: DescriptiveTrendObservation | null;
+  draftMessages: SavedMessageDraft[];
+  consultaSummary: ConsultaSummaryState;
+  supportNetwork: SupportPerson[];
+  selectedSupportNeeds: SupportNeedType[];
+  currentMood: string | null;
+  messagePreview: DemoMessagePreview | null;
+}
+
+function createEmptyDemoSandbox(): DemoSandboxData {
+  return {
+    messages: [DEMO_WELCOME_MESSAGE],
+    authorizedConversationNotes: [],
+    diaryEntries: [],
+    trendObservation: null,
+    draftMessages: [],
+    consultaSummary: { items: [], showOnlyApproved: false },
+    supportNetwork: [],
+    selectedSupportNeeds: [],
+    currentMood: null,
+    messagePreview: null,
+  };
+}
 
 const VIEW_TITLES: Record<AppView, string> = {
   conversar: 'Espacio seguro',
@@ -36,23 +91,49 @@ export default function App() {
   const [externalChatPrompt, setExternalChatPrompt] = useState<string | null>(null);
   const [avatarCustomizerOpen, setAvatarCustomizerOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
+  const [demoMode, setDemoMode] = useState<'idle' | 'prompt' | 'tour'>(() =>
+    state.onboardingDemoSeen ? 'idle' : 'prompt'
+  );
+  const [demoStepIndex, setDemoStepIndex] = useState(0);
+  const [demoAutoPlay, setDemoAutoPlay] = useState(false);
+  const [demoLiveStatus, setDemoLiveStatus] = useState<string | null>(null);
+  const [demoSandbox, setDemoSandbox] = useState<DemoSandboxData>(createEmptyDemoSandbox);
+
+  const isDemoTour = demoMode === 'tour';
+  const displayMessages = isDemoTour ? demoSandbox.messages : state.messages;
+  const displayAuthorizedNotes = isDemoTour
+    ? demoSandbox.authorizedConversationNotes
+    : state.authorizedConversationNotes;
+  const displayDiaryEntries = isDemoTour ? demoSandbox.diaryEntries : state.diaryEntries;
+  const displayTrendObservation = isDemoTour
+    ? demoSandbox.trendObservation
+    : state.trendObservation;
+  const displayDraftMessages = isDemoTour ? demoSandbox.draftMessages : state.draftMessages;
+  const displayConsultaSummary = isDemoTour
+    ? demoSandbox.consultaSummary
+    : state.consultaSummary;
+  const displaySupportNetwork = isDemoTour ? demoSandbox.supportNetwork : state.supportNetwork;
+  const displaySupportNeeds = isDemoTour
+    ? demoSandbox.selectedSupportNeeds
+    : state.selectedSupportNeeds;
+  const displayCurrentMood = isDemoTour ? demoSandbox.currentMood : state.currentMood;
 
   const sharedAppContext = useMemo(
     () => ({
-      recentDiarySummary: state.diaryEntries.slice(0, 4).map(
+      recentDiarySummary: displayDiaryEntries.slice(0, 4).map(
         (d) =>
           `${d.createdAt.slice(0, 10)}: emociones=[${d.emotions.join(', ')}], sobrecarga=${d.overloadLevel}, descanso=${d.restQuality}`
       ),
-      supportNetworkNames: state.supportNetwork.map((p) => `${p.name} (${p.relationship})`),
+      supportNetworkNames: displaySupportNetwork.map((p) => `${p.name} (${p.relationship})`),
       consultaNotesCount:
-        state.authorizedConversationNotes.length +
-        state.consultaSummary.items.filter((i) => i.included).length,
+        displayAuthorizedNotes.length +
+        displayConsultaSummary.items.filter((i) => i.included).length,
     }),
     [
-      state.diaryEntries,
-      state.supportNetwork,
-      state.authorizedConversationNotes.length,
-      state.consultaSummary.items,
+      displayDiaryEntries,
+      displaySupportNetwork,
+      displayAuthorizedNotes.length,
+      displayConsultaSummary.items,
     ]
   );
 
@@ -75,7 +156,241 @@ export default function App() {
     store.setState((prev) => ({ ...prev, homeMode: mode }));
   };
 
-  const trustedContacts = state.supportNetwork.filter((p) => p.isTrustedEmergencyContact);
+  const applyDemoStep = (index: number, keepAutoPlay = false) => {
+    const safeIndex = Math.max(0, Math.min(DEMO_STEPS.length - 1, index));
+    const step = DEMO_STEPS[safeIndex];
+    if (!keepAutoPlay) {
+      setDemoAutoPlay(false);
+    }
+    if (cu4Active) store.exitCU4();
+    store.setActiveView(step.view);
+    if (step.homeMode) {
+      setHomeMode(step.homeMode);
+    }
+    setDemoStepIndex(safeIndex);
+  };
+
+  const handleStartDemo = (startAutoPlay = false) => {
+    setMobileNavOpen(false);
+    store.markOnboardingDemoSeen();
+    if (!state.consentAccepted) {
+      store.acceptConsent();
+    }
+    setDemoSandbox(createEmptyDemoSandbox());
+    setDemoLiveStatus(null);
+    setDemoAutoPlay(startAutoPlay);
+    setDemoMode('tour');
+    applyDemoStep(0, startAutoPlay);
+  };
+
+  const handleSkipDemo = () => {
+    store.markOnboardingDemoSeen();
+    setDemoAutoPlay(false);
+    setDemoLiveStatus(null);
+    setDemoMode('idle');
+  };
+
+  const handleFinishDemo = () => {
+    const wasLastStep = demoStepIndex === DEMO_STEPS.length - 1;
+    store.markOnboardingDemoSeen();
+    setDemoAutoPlay(false);
+    setDemoLiveStatus(null);
+    setDemoSandbox(createEmptyDemoSandbox());
+    setDemoMode('idle');
+    if (wasLastStep) {
+      if (cu4Active) store.exitCU4();
+      store.setActiveView('conversar');
+      setHomeMode('choose');
+    }
+  };
+
+  const handleDemoOptionalAction = (
+    action: 'avatar_customizer' | 'theme_customizer' | 'privacy_modal'
+  ) => {
+    setDemoAutoPlay(false);
+    if (action === 'avatar_customizer') setAvatarCustomizerOpen(true);
+    else if (action === 'theme_customizer') setThemeModalOpen(true);
+    else if (action === 'privacy_modal') store.setPrivacyOpen(true);
+  };
+
+  // Live progressive messages & responses per demo step (never modifies real user data)
+  useEffect(() => {
+    if (demoMode !== 'tour') return;
+    const timers: number[] = [];
+
+    if (demoStepIndex === 0) {
+      setDemoLiveStatus('Ejemplo interactivo: tus datos reales no se modifican durante la demo.');
+      setDemoSandbox((prev) => ({
+        ...prev,
+        messages: [DEMO_WELCOME_MESSAGE],
+        messagePreview: null,
+      }));
+    } else if (demoStepIndex === 1) {
+      setDemoLiveStatus('Enviando mensaje de ejemplo al chat…');
+      setDemoSandbox((prev) => ({
+        ...prev,
+        messages: [DEMO_WELCOME_MESSAGE],
+      }));
+      timers.push(
+        window.setTimeout(() => {
+          setDemoSandbox((prev) => ({
+            ...prev,
+            messages: [DEMO_WELCOME_MESSAGE, DEMO_CHAT_TURN_1_USER],
+            currentMood: 'Cansancio',
+          }));
+          setDemoLiveStatus('AnIA está leyendo y preparando una respuesta abierta…');
+        }, 300)
+      );
+      timers.push(
+        window.setTimeout(() => {
+          setDemoSandbox((prev) => ({
+            ...prev,
+            messages: [DEMO_WELCOME_MESSAGE, DEMO_CHAT_TURN_1_USER, DEMO_CHAT_TURN_1_ANIA],
+            authorizedConversationNotes: [DEMO_AUTHORIZED_NOTES[0]],
+          }));
+          setDemoLiveStatus(
+            'Respuesta recibida en el chat: emociones validables, resumen descriptivo y nota guardada.'
+          );
+        }, 1050)
+      );
+    } else if (demoStepIndex === 2) {
+      setDemoSandbox((prev) => ({
+        ...prev,
+        messages: [DEMO_WELCOME_MESSAGE, DEMO_CHAT_TURN_1_USER, DEMO_CHAT_TURN_1_ANIA],
+        authorizedConversationNotes: [DEMO_AUTHORIZED_NOTES[0]],
+        currentMood: 'Cansancio',
+      }));
+      setDemoLiveStatus('Continuando la misma conversación desde el Avatar IA…');
+      timers.push(
+        window.setTimeout(() => {
+          setDemoSandbox((prev) => ({
+            ...prev,
+            messages: [
+              DEMO_WELCOME_MESSAGE,
+              DEMO_CHAT_TURN_1_USER,
+              DEMO_CHAT_TURN_1_ANIA,
+              DEMO_CHAT_TURN_2_USER,
+            ],
+          }));
+        }, 450)
+      );
+      timers.push(
+        window.setTimeout(() => {
+          setDemoSandbox((prev) => ({
+            ...prev,
+            messages: [
+              DEMO_WELCOME_MESSAGE,
+              DEMO_CHAT_TURN_1_USER,
+              DEMO_CHAT_TURN_1_ANIA,
+              DEMO_CHAT_TURN_2_USER,
+              DEMO_CHAT_TURN_2_ANIA,
+            ],
+            authorizedConversationNotes: DEMO_AUTHORIZED_NOTES,
+          }));
+          setDemoLiveStatus(
+            'El Avatar IA responde manteniendo todo el historial y el contexto del chat.'
+          );
+        }, 1200)
+      );
+    } else if (demoStepIndex === 3) {
+      setDemoSandbox((prev) => ({
+        ...prev,
+        diaryEntries: DEMO_DIARY_ENTRIES,
+        trendObservation: null,
+      }));
+      setDemoLiveStatus('Mostrando registros de ejemplo de esta semana en Mi diario…');
+      timers.push(
+        window.setTimeout(() => {
+          setDemoSandbox((prev) => ({
+            ...prev,
+            trendObservation: DEMO_TREND_OBSERVATION,
+          }));
+          setDemoLiveStatus('Tendencias descriptivas generadas para que confirmes si te encajan.');
+        }, 600)
+      );
+    } else if (demoStepIndex === 4) {
+      setDemoLiveStatus(
+        'Ejercicios inmediatos listos: puedes probar la respiración guiada o el anclaje 5-4-3-2-1.'
+      );
+    } else if (demoStepIndex === 5) {
+      setDemoLiveStatus('Generando 3 propuestas de mensaje a partir de tu conversación…');
+      timers.push(
+        window.setTimeout(() => {
+          setDemoSandbox((prev) => ({
+            ...prev,
+            draftMessages: DEMO_SAVED_DRAFTS,
+            messagePreview: DEMO_MESSAGE_PREVIEW,
+          }));
+          setDemoLiveStatus(
+            '3 borradores listos en pantalla (Cercano, Sereno y Directo) para editar antes de copiar.'
+          );
+        }, 400)
+      );
+    } else if (demoStepIndex === 6) {
+      setDemoLiveStatus('Organizando notas autorizadas para llevar a consulta…');
+      timers.push(
+        window.setTimeout(() => {
+          setDemoSandbox((prev) => ({
+            ...prev,
+            authorizedConversationNotes: DEMO_AUTHORIZED_NOTES,
+            diaryEntries: DEMO_DIARY_ENTRIES,
+            consultaSummary: {
+              lastGeneratedAt: new Date().toISOString(),
+              items: DEMO_CONSULTA_ITEMS,
+              showOnlyApproved: false,
+            },
+          }));
+          setDemoLiveStatus(
+            'Resumen listo: separa tus palabras literales de la síntesis descriptiva de AnIA.'
+          );
+        }, 400)
+      );
+    } else if (demoStepIndex === 7) {
+      setDemoSandbox((prev) => ({
+        ...prev,
+        supportNetwork: DEMO_SUPPORT_PEOPLE,
+        selectedSupportNeeds: DEMO_SUPPORT_NEEDS,
+      }));
+      setDemoLiveStatus(
+        'Red de apoyo y líneas 24h activas. Al pulsar «Finalizar», tu espacio volverá a quedar limpio.'
+      );
+    }
+
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  }, [demoMode, demoStepIndex]);
+
+  // Optional auto-play ("Ver demo del tirón")
+  useEffect(() => {
+    if (
+      demoMode !== 'tour' ||
+      !demoAutoPlay ||
+      avatarCustomizerOpen ||
+      themeModalOpen ||
+      store.privacyOpen
+    ) {
+      return;
+    }
+    if (demoStepIndex >= DEMO_STEPS.length - 1) {
+      setDemoAutoPlay(false);
+      return;
+    }
+    const delayMs = demoStepIndex === 0 || demoStepIndex === 4 ? 4600 : 6800;
+    const timer = window.setTimeout(() => {
+      applyDemoStep(demoStepIndex + 1, true);
+    }, delayMs);
+    return () => window.clearTimeout(timer);
+  }, [
+    demoMode,
+    demoAutoPlay,
+    demoStepIndex,
+    avatarCustomizerOpen,
+    themeModalOpen,
+    store.privacyOpen,
+  ]);
+
+  const trustedContacts = displaySupportNetwork.filter((p) => p.isTrustedEmergencyContact);
 
   return (
     <div className="min-h-screen bg-ania-canvas text-ania-ink flex flex-col lg:flex-row transition-colors">
@@ -145,8 +460,9 @@ export default function App() {
                 setMobileNavOpen(false);
                 setThemeModalOpen(true);
               }}
+              onOpenDemo={() => handleStartDemo(false)}
               cu4Active={cu4Active}
-              consultaCount={state.consultaSummary.items.filter((i) => i.included).length}
+              consultaCount={displayConsultaSummary.items.filter((i) => i.included).length}
               memoryEnabled={state.memoryEnabled}
             />
           </div>
@@ -160,8 +476,9 @@ export default function App() {
           onSelectView={handleSelectView}
           onOpenPrivacy={() => store.setPrivacyOpen(true)}
           onOpenTheme={() => setThemeModalOpen(true)}
+          onOpenDemo={() => handleStartDemo(false)}
           cu4Active={cu4Active}
-          consultaCount={state.consultaSummary.items.filter((i) => i.included).length}
+          consultaCount={displayConsultaSummary.items.filter((i) => i.included).length}
           memoryEnabled={state.memoryEnabled}
         />
       </div>
@@ -362,7 +679,7 @@ export default function App() {
             ) : state.homeMode === 'choose' ? (
               <HomeModeSelector
                 avatarConfig={state.avatarConfig}
-                messageCount={state.messages.length}
+                messageCount={displayMessages.length}
                 onSelectChat={() => setHomeMode('chat')}
                 onSelectAvatar={() => setHomeMode('avatar')}
                 onOpenCustomizer={() => setAvatarCustomizerOpen(true)}
@@ -370,12 +687,16 @@ export default function App() {
             ) : state.homeMode === 'avatar' ? (
               <AvatarView
                 avatarConfig={state.avatarConfig}
-                messages={state.messages}
-                onUpdateMessages={(updater) =>
-                  store.setState((prev) => ({ ...prev, messages: updater(prev.messages) }))
-                }
+                messages={displayMessages}
+                onUpdateMessages={(updater) => {
+                  if (isDemoTour) {
+                    setDemoSandbox((prev) => ({ ...prev, messages: updater(prev.messages) }));
+                  } else {
+                    store.setState((prev) => ({ ...prev, messages: updater(prev.messages) }));
+                  }
+                }}
                 easyRead={state.easyRead}
-                currentMood={state.currentMood}
+                currentMood={displayCurrentMood}
                 appContext={sharedAppContext}
                 onAuthorizeNote={store.authorizeNoteForConsulta}
                 onTriggerSafety={store.triggerCU4}
@@ -389,13 +710,17 @@ export default function App() {
               <ConversarView
                 consentAccepted={state.consentAccepted}
                 onAcceptConsent={store.acceptConsent}
-                messages={state.messages}
-                onUpdateMessages={(updater) =>
-                  store.setState((prev) => ({ ...prev, messages: updater(prev.messages) }))
-                }
+                messages={displayMessages}
+                onUpdateMessages={(updater) => {
+                  if (isDemoTour) {
+                    setDemoSandbox((prev) => ({ ...prev, messages: updater(prev.messages) }));
+                  } else {
+                    store.setState((prev) => ({ ...prev, messages: updater(prev.messages) }));
+                  }
+                }}
                 easyRead={state.easyRead}
                 voiceReadAloud={state.voiceReadAloud}
-                currentMood={state.currentMood}
+                currentMood={displayCurrentMood}
                 appContext={sharedAppContext}
                 onAuthorizeNote={store.authorizeNoteForConsulta}
                 onTriggerSafety={store.triggerCU4}
@@ -407,9 +732,9 @@ export default function App() {
             )
           ) : activeView === 'diario' ? (
             <DiaryView
-              entries={state.diaryEntries}
+              entries={displayDiaryEntries}
               followUpConfig={state.followUpConfig}
-              trendObservation={state.trendObservation}
+              trendObservation={displayTrendObservation}
               easyRead={state.easyRead}
               onAddEntry={store.addDiaryEntry}
               onUpdateEntry={store.updateDiaryEntry}
@@ -417,9 +742,13 @@ export default function App() {
               onUpdateConfig={(cfg) =>
                 store.setState((prev) => ({ ...prev, followUpConfig: cfg }))
               }
-              onSetTrendObservation={(obs) =>
-                store.setState((prev) => ({ ...prev, trendObservation: obs }))
-              }
+              onSetTrendObservation={(obs) => {
+                if (isDemoTour) {
+                  setDemoSandbox((prev) => ({ ...prev, trendObservation: obs }));
+                } else {
+                  store.setState((prev) => ({ ...prev, trendObservation: obs }));
+                }
+              }}
               onTriggerSafety={store.triggerCU4}
               onNavigate={handleSelectView}
             />
@@ -427,7 +756,8 @@ export default function App() {
             <CalmToolsView onLogHelpfulTool={store.addDiaryEntry} />
           ) : activeView === 'mensaje' ? (
             <MessageHelperView
-              drafts={state.draftMessages}
+              key={isDemoTour ? 'demo-msg' : 'live-msg'}
+              drafts={displayDraftMessages}
               easyRead={state.easyRead}
               prefilledRecipient={store.prefilledMessageRecipient}
               prefilledGoal={store.prefilledMessageGoal}
@@ -439,35 +769,61 @@ export default function App() {
               onDeleteDraft={store.deleteDraftMessage}
               onTriggerSafety={store.triggerCU4}
               onNavigate={handleSelectView}
+              demoPreview={isDemoTour ? demoSandbox.messagePreview : null}
             />
           ) : activeView === 'consulta' ? (
             <TherapyNotesView
-              authorizedConversationNotes={state.authorizedConversationNotes}
-              diaryEntries={state.diaryEntries}
-              summaryState={state.consultaSummary}
+              authorizedConversationNotes={displayAuthorizedNotes}
+              diaryEntries={displayDiaryEntries}
+              summaryState={displayConsultaSummary}
               easyRead={state.easyRead}
               onSetItems={store.setConsultaItems}
               onAddItem={store.addConsultaItem}
-              onUpdateItem={store.updateConsultaItem}
+              onUpdateItem={(id, patch) => {
+                if (isDemoTour) {
+                  setDemoSandbox((prev) => ({
+                    ...prev,
+                    consultaSummary: {
+                      ...prev.consultaSummary,
+                      items: prev.consultaSummary.items.map((item) =>
+                        item.id === id ? { ...item, ...patch } : item
+                      ),
+                    },
+                  }));
+                } else {
+                  store.updateConsultaItem(id, patch);
+                }
+              }}
               onDeleteItem={store.deleteConsultaItem}
-              onToggleShowApproved={(val) =>
-                store.setState((prev) => ({
-                  ...prev,
-                  consultaSummary: { ...prev.consultaSummary, showOnlyApproved: val },
-                }))
-              }
+              onToggleShowApproved={(val) => {
+                if (isDemoTour) {
+                  setDemoSandbox((prev) => ({
+                    ...prev,
+                    consultaSummary: { ...prev.consultaSummary, showOnlyApproved: val },
+                  }));
+                } else {
+                  store.setState((prev) => ({
+                    ...prev,
+                    consultaSummary: { ...prev.consultaSummary, showOnlyApproved: val },
+                  }));
+                }
+              }}
               onClearSummary={store.clearConsultaSummary}
               onTriggerSafety={store.triggerCU4}
             />
           ) : (
             <SupportNetworkView
-              people={state.supportNetwork}
+              people={displaySupportNetwork}
               professionalRef={state.professionalRef}
-              selectedNeeds={state.selectedSupportNeeds}
+              selectedNeeds={displaySupportNeeds}
               easyRead={state.easyRead}
-              onUpdateNeeds={(needs) =>
-                store.setState((prev) => ({ ...prev, selectedSupportNeeds: needs }))
-              }
+              onUpdateNeeds={(needs) => {
+                if (isDemoTour) {
+                  setDemoSandbox((prev) => ({ ...prev, selectedSupportNeeds: needs }));
+                } else {
+                  store.setState((prev) => ({ ...prev, selectedSupportNeeds: needs }));
+                }
+              }}
               onAddPerson={store.addSupportPerson}
               onUpdatePerson={store.updateSupportPerson}
               onDeletePerson={store.deleteSupportPerson}
@@ -482,14 +838,14 @@ export default function App() {
 
         {/* Right Context Panel matching screenshot */}
         <RightPanel
-          currentMood={state.currentMood}
+          currentMood={displayCurrentMood}
           onSelectMood={(mood) => store.setState((prev) => ({ ...prev, currentMood: mood }))}
           onQuickStartWithMood={handleQuickStartWithMood}
           onNavigate={handleSelectView}
           onOpenSafety={() =>
             store.triggerCU4('Has solicitado ver las líneas de ayuda y apoyo humano.')
           }
-          diaryCount={state.diaryEntries.length}
+          diaryCount={displayDiaryEntries.length}
         />
       </div>
 
@@ -531,6 +887,20 @@ export default function App() {
         onResetConversation={store.resetConversation}
         onEraseAllData={store.eraseAllData}
         auditLog={state.auditLog}
+      />
+
+      {/* Interactive First-Visit Onboarding Demo & Guided Walkthrough */}
+      <DemoTutorialOverlay
+        mode={demoMode}
+        stepIndex={demoStepIndex}
+        autoPlay={demoAutoPlay}
+        liveStatus={demoLiveStatus}
+        onStartDemo={handleStartDemo}
+        onSkipDemo={handleSkipDemo}
+        onToggleAutoPlay={() => setDemoAutoPlay((v) => !v)}
+        onStepChange={(nextIdx) => applyDemoStep(nextIdx, false)}
+        onFinishDemo={handleFinishDemo}
+        onTriggerOptionalAction={handleDemoOptionalAction}
       />
     </div>
   );

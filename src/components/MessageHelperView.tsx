@@ -1,6 +1,7 @@
 import { Bookmark, Check, Compass, Copy, RefreshCw, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { postAniaJson } from '../shared/api';
+import type { DemoMessagePreview } from '../shared/demoData';
 import { detectRiskIndicators } from '../shared/safety';
 import type {
   AppView,
@@ -20,6 +21,7 @@ interface MessageHelperViewProps {
   onDeleteDraft: (id: string) => void;
   onTriggerSafety: (reason?: string) => void;
   onNavigate: (view: AppView) => void;
+  demoPreview?: DemoMessagePreview | null;
 }
 
 const GOALS: Array<{ id: CommunicativeGoal; label: string; hint: string }> = [
@@ -40,6 +42,7 @@ export function MessageHelperView({
   onDeleteDraft,
   onTriggerSafety,
   onNavigate,
+  demoPreview = null,
 }: MessageHelperViewProps) {
   const [goal, setGoal] = useState<CommunicativeGoal>('contar_como_estoy');
   const [recipientName, setRecipientName] = useState('');
@@ -62,6 +65,21 @@ export function MessageHelperView({
       onClearPrefill();
     }
   }, [prefilledRecipient, prefilledGoal, onClearPrefill]);
+
+  useEffect(() => {
+    if (!demoPreview) return;
+    setGoal(demoPreview.goal);
+    setRecipientName(demoPreview.recipientName);
+    setContext(demoPreview.context);
+    setFears(demoPreview.fears);
+    setProposals(demoPreview.proposals);
+    const preferred =
+      demoPreview.proposals.find((p) => p.tone === demoPreview.selectedTone) ??
+      demoPreview.proposals[0];
+    setSelectedTone(preferred?.tone ?? null);
+    setEditableText(preferred?.body ?? '');
+    setExplicitlyApproved(true);
+  }, [demoPreview]);
 
   const generateProposals = async (withReformulation?: string) => {
     if (!context.trim()) return;

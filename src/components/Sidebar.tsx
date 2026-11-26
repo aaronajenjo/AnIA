@@ -5,9 +5,11 @@ import {
   MessageCircle,
   MessageSquareHeart,
   Palette,
+  PlayCircle,
   Shield,
   Wind,
 } from 'lucide-react';
+import accelerateLogo from '../assets/images/accelerate.png';
 import aniaLogo from '../assets/images/logo.png';
 import type { AppView } from '../shared/types';
 
@@ -16,6 +18,7 @@ interface SidebarProps {
   onSelectView: (view: AppView) => void;
   onOpenPrivacy: () => void;
   onOpenTheme: () => void;
+  onOpenDemo: () => void;
   cu4Active: boolean;
   consultaCount: number;
   memoryEnabled: boolean;
@@ -39,6 +42,7 @@ export function Sidebar({
   onSelectView,
   onOpenPrivacy,
   onOpenTheme,
+  onOpenDemo,
   cu4Active,
   consultaCount,
   memoryEnabled,
@@ -91,6 +95,15 @@ export function Sidebar({
       <div className="mt-6 space-y-2.5">
         <button
           type="button"
+          onClick={onOpenDemo}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-ania-ink-secondary hover:bg-ania-surface-hover transition-colors text-left"
+        >
+          <PlayCircle className="w-4 h-4 text-ania-accent-text shrink-0" aria-hidden="true" />
+          <span>Ver demo guiada</span>
+        </button>
+
+        <button
+          type="button"
           onClick={onOpenTheme}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-ania-ink-secondary hover:bg-ania-surface-hover transition-colors text-left"
         >
@@ -126,6 +139,16 @@ export function Sidebar({
         <p className="text-[11px] leading-relaxed text-ania-ink-faint px-1">
           Este asistente acompaña y facilita, no sustituye al profesional ni toma decisiones por ti.
         </p>
+
+        <div className="pt-2 border-t border-ania-border-subtle">
+          <div className="rounded-xl bg-white/95 border border-ania-border-subtle px-3.5 py-2.5 flex items-center justify-center">
+            <img
+              src={accelerateLogo}
+              alt="Accelerate by Sopra Steria"
+              className="h-9 w-auto max-w-full object-contain"
+            />
+          </div>
+        </div>
       </div>
     </aside>
   );

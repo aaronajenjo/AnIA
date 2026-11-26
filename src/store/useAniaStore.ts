@@ -25,6 +25,7 @@ import type {
 export interface AniaPersistedState {
   consentAccepted: boolean;
   consentAcceptedAt?: string;
+  onboardingDemoSeen: boolean;
   homeMode: HomeConversationMode;
   avatarConfig: AvatarConfig;
   themeConfig: AppThemeConfig;
@@ -93,6 +94,7 @@ const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
 
 const DEFAULT_STATE: AniaPersistedState = {
   consentAccepted: false,
+  onboardingDemoSeen: false,
   homeMode: 'choose',
   avatarConfig: DEFAULT_AVATAR_CONFIG,
   themeConfig: DEFAULT_THEME_CONFIG,
@@ -199,6 +201,7 @@ export function useAniaStore() {
           ...DEFAULT_STATE,
           consentAccepted: state.consentAccepted,
           consentAcceptedAt: state.consentAcceptedAt,
+          onboardingDemoSeen: state.onboardingDemoSeen,
           themeConfig: state.themeConfig,
           memoryEnabled: false,
           easyRead: state.easyRead,
@@ -249,6 +252,12 @@ export function useAniaStore() {
         prev.auditLog
       ),
     }));
+  };
+
+  const markOnboardingDemoSeen = () => {
+    setState((prev) =>
+      prev.onboardingDemoSeen ? prev : { ...prev, onboardingDemoSeen: true }
+    );
   };
 
   const triggerCU4 = (reason?: string) => {
@@ -527,6 +536,7 @@ export function useAniaStore() {
     setPrefilledMessageGoal,
     openMessageForPerson,
     acceptConsent,
+    markOnboardingDemoSeen,
     resetConversation,
     authorizeNoteForConsulta,
     addDiaryEntry,
